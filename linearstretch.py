@@ -27,11 +27,16 @@ VERTSBOTTOM = "Bottom"
 VERTSTOP = "Top"
 REFBOTTOM = "Bottom ref"
 REFTOP = "Top ref"
+PLATTOP = "Top platform"
+PLATBOT = "Bottom platform"
 
 #
 #   getvertsingroup --  get vertices in given group
 #
 def getvertsingroup(obj, groupobj) :
+    """
+    Get vertices by vertex group
+    """
     groupix = groupobj.index                    # group index
     ####print("Verts of index %d, group %s, object %s" % (groupix, groupobj.name, obj.name)) # ***TEMP***
     verts = []                                  # array of verts
@@ -45,36 +50,46 @@ def getvertsingroup(obj, groupobj) :
 #   stretchmodel -- stretch selected model appropriately
 #
 def stretchmodel(target, bottomrefname, toprefname, topname, dist) :
+    """
+    Stretch selected model along vector from bottom ref to top ref.
+    
+    dist is the desired distance between bottom ref and top ref
+    """
     #   Sanity checks before starting
     if target.type != 'MESH' :
-        return({'ERROR_INVALID_INPUT'}, "Selected object \"%s\" must be a mesh." % (target.name,))
+        raise ValueError("Selected object \"%s\" must be a mesh." % (target.name,))
     if target.scale[0] < 0 or target.scale[1] < 0 or target.scale[2] < 0 :
-        return({'ERROR_INVALID_INPUT'}, "Selected object \"%s\" has a negative scale:  (%1.2f, %1.2f, %1.2f)." % 
+        raise ValueError("Selected object \"%s\" has a negative scale:  (%1.2f, %1.2f, %1.2f)." % 
                 (target.name, target.scale[0], target.scale[1], target.scale[2]))
                 
     #   Find relevant vertex groups
-    bottomrefgroup = target.vertex_groups[bottomrefname]
-    toprefgroup = target.vertex_groups[toprefname]
+    toprefv = getrefvertcoords(target, toprefname)
+    bottomrefv = getrefvertcoords(target, bottomrefname)
     topgroup = target.vertex_groups[topname]
-    bottomrefvs = getvertsingroup(target, bottomrefgroup)   # verts in top ref group
-    toprefvs = getvertsingroup(target, toprefgroup)         # verts in bottom ref group
     topvs = getvertsingroup(target, topgroup)               # verts to move
-    ####print("Top ref group: %d verts. Bottom ref group: %d verts. Verts to move: %d." % (len(toprefvs), len(bottomrefvs), len(topvs))) # ***TEMP***
-    if len(toprefvs) != 1 : 
-        return({'ERROR_INVALID_INPUT'}, "Reference vertex group \"%s\" had %d vertices, not one." % (toprefgroup.name,len(toprefvs)))
-    if len(bottomrefvs) != 1 : 
-        return({'ERROR_INVALID_INPUT'}, "Reference vertex group \"%s\" had %d vertices, not one." % (bottomrefgroup.name,len(bottomrefvs)))
-    refvec = toprefvs[0].co - bottomrefvs[0].co             # movement direction 
-    print("topref: %s  bottomref: %s  refvec: %s" % (toprefvs[0].co, bottomrefvs[0].co, refvec))    # ***TEMP***
+    refvec = toprefv.co - bottomrefv.co                         # movement direction
+    print("topref: %s  bottomref: %s  refvec: %s" % (toprefv.co, bottomrefv.co, refvec))    # ***TEMP***
     if refvec.magnitude < 0.001 :
-        return({'ERROR_INVALID_INPUT'}, "Reference vertices are in the same place.")
+        raise ValueError("Reference vertices are in the same place.")
     refvecnorm = refvec.normalized()                        # unit vector
     #   All checks passed. OK to perform stretch.
     #   Move verts
     for v in topvs :
         v.co = v.co + refvecnorm * dist
-    return None                                             # success
     
+def getrefvertcoords(obj, refname) :
+    """
+    Get coordinates of a single vertex group
+    """
+    if not refname in obj.vertex_groups :
+        raise ValueError("Cannot find vertex group \"%s\"." % (refname,))
+    refgroup = obj.vertex_groups[refname]
+    refverts = getvertsingroup(obj, refgroup)
+    if len(refverts) != 1 : 
+        raise ValueError("Reference vertex group \"%s\" had %d vertices, not one." % (refname,len(refverts)))
+    return refverts[0]                              # return the only vert
+   
+        
 #
 #   asksize -- pop up dialog for size
 #
@@ -99,8 +114,11 @@ class AskSizeDialogOperator(bpy.types.Operator):
         if not context.selected_objects :
             return({'ERROR_INVALID_INPUT'}, "Nothing selected.")
         target = context.selected_objects[-1]       # target object (last selection)
-        result = stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, self.desired_height)
-        return result
+        try :
+            stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, self.desired_height)
+        except ValueError as message :
+            return ({'ERROR_INVALID_INPUT'}, str(message))
+        return None
 
     def invoke(self, context, event):
         wm = context.window_manager
