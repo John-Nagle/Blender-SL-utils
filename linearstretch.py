@@ -20,6 +20,10 @@
 #   filename = "linearstretch.py"
 #   exec(compile(open(filename).read(), filename, 'exec'))
 #
+#   TODO:
+#       Make sure in object mode.
+#       Make sure scale is 1, or fix to be scale-independent.
+#
 import bpy
 import math
 #
@@ -120,12 +124,10 @@ class AskSizeDialogOperator(bpy.types.Operator):
         target = context.selected_objects[-1]       # target object (last selection)
         try :                                       # do the work
             #   Calculate how much to stretch to get desired height between platform ref points
-            oldheight = getrefvertcoords(target, PLATTOP).co.z - getrefvertcoords(target, PLATBOTTOM).co.z    # previous height
+            oldheight = getrefvertcoords(target, PLATTOP).co.z - getrefvertcoords(target, PLATBOTTOM).co.z  # previous height
             zchange = self.desired_height - oldheight        # need to change Z by this much
-            oldstretchvec = getrefvertcoords(target, REFTOP).co - getrefvertcoords(target, REFBOTTOM).co      # previous stretch vector
-            newstretchheight = oldstretchvec.z + zchange
-            scalefactor = newstretchheight / oldstretchvec.z
-            newstretchvec = oldstretchvec * scalefactor
+            oldstretchvec = getrefvertcoords(target, REFTOP).co - getrefvertcoords(target, REFBOTTOM).co    # previous stretch vector
+            newstretchvec = oldstretchvec * ((oldstretchvec.z + zchange) / oldstretchvec.z)                 # desired stretch vector
             dist = newstretchvec.magnitude - oldstretchvec.magnitude    # distance to add to stretch vector
             stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, dist)
             #   Checking
