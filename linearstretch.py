@@ -23,12 +23,16 @@
 import bpy
 import math
 #
+#   Names of vertex groups in model.
+#   Model must use these.
+#   All "Ref" single vertex ref points must have vertex weight 0.
+#
 VERTSBOTTOM = "Bottom"
 VERTSTOP = "Top"
 REFBOTTOM = "Bottom ref"
 REFTOP = "Top ref"
 PLATTOP = "Top platform"
-PLATBOT = "Bottom platform"
+PLATBOTTOM = "Bottom platform"
 
 #
 #   getvertsingroup --  get vertices in given group
@@ -67,7 +71,7 @@ def stretchmodel(target, bottomrefname, toprefname, topname, dist) :
     bottomrefv = getrefvertcoords(target, bottomrefname)
     topgroup = target.vertex_groups[topname]
     topvs = getvertsingroup(target, topgroup)               # verts to move
-    refvec = toprefv.co - bottomrefv.co                         # movement direction
+    refvec = toprefv.co - bottomrefv.co                     # movement direction
     print("topref: %s  bottomref: %s  refvec: %s" % (toprefv.co, bottomrefv.co, refvec))    # ***TEMP***
     if refvec.magnitude < 0.001 :
         raise ValueError("Reference vertices are in the same place.")
@@ -114,8 +118,21 @@ class AskSizeDialogOperator(bpy.types.Operator):
         if not context.selected_objects :
             return({'ERROR_INVALID_INPUT'}, "Nothing selected.")
         target = context.selected_objects[-1]       # target object (last selection)
-        try :
-            stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, self.desired_height)
+        try :                                       # do the work
+            #   Calculate how much to stretch to get desired height between platform ref points
+            oldheight = getrefvertcoords(target, PLATTOP).co.z - getrefvertcoords(target, PLATBOTTOM).co.z    # previous height
+            zchange = self.desired_height - oldheight        # need to change Z by this much
+            oldstretchvec = getrefvertcoords(target, REFTOP).co - getrefvertcoords(target, REFBOTTOM).co      # previous stretch vector
+            newstretchheight = oldstretchvec.z + zchange
+            scalefactor = newstretchheight / oldstretchvec.z
+            newstretchvec = oldstretchvec * scalefactor
+            dist = newstretchvec.magnitude - oldstretchvec.magnitude    # distance to add to stretch vector
+            stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, dist)
+            #   Checking
+            finalheight = getrefvertcoords(target, PLATTOP).co.z - getrefvertcoords(target, PLATBOTTOM).co.z    # final height
+            if abs(finalheight - self.desired_height) > 0.01 :
+                raise ValueError("Model error: height %1.3f after stretching does not match goal of %1.3f" % (finalheight, self.desired_height))
+            
         except ValueError as message :
             return ({'ERROR_INVALID_INPUT'}, str(message))
         return None
