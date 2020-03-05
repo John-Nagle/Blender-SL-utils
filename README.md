@@ -15,6 +15,9 @@ To invoke:
     import os
     filename=os.path.dirname(bpy.data.filepath)+ "/../Blender-SL-utils/linearstretch.py"
     exec(compile(open(filename).read(), filename, 'exec'))
+    
+Select both parts of the high and low LOD. Main part of high LOD must be selected last because it has the reference points.
+    
     linearstretch()
     
 ### UVs
