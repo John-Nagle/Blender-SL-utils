@@ -57,7 +57,7 @@ def getvertsingroup(obj, groupobj) :
 #
 #   stretchmodel -- stretch selected model appropriately
 #
-def stretchmodel(reftarget, target, bottomrefname, toprefname, topname, dist) :
+def stretchmodel(target, topname, stretchvec) :
     """
     Stretch selected model along vector from bottom ref to top ref.
     
@@ -71,19 +71,20 @@ def stretchmodel(reftarget, target, bottomrefname, toprefname, topname, dist) :
                 (target.name, target.scale[0], target.scale[1], target.scale[2]))
                 
     #   Find relevant vertex groups
-    toprefv = getrefvertcoords(reftarget, toprefname)
-    bottomrefv = getrefvertcoords(reftarget, bottomrefname)
+    ####toprefv = getrefvertcoords(reftarget, toprefname)
+    ####bottomrefv = getrefvertcoords(reftarget, bottomrefname)
     topgroup = target.vertex_groups[topname]
     topvs = getvertsingroup(target, topgroup)               # verts to move
-    refvec = toprefv.co - bottomrefv.co                     # movement direction
-    print("object: %s  topref: %s  bottomref: %s  refvec: %s" % (target.name, toprefv.co, bottomrefv.co, refvec))    # ***TEMP***
-    if refvec.magnitude < 0.001 :
-        raise ValueError("Reference vertices are in the same place.")
-    refvecnorm = refvec.normalized()                        # unit vector
+    ####refvec = toprefv.co - bottomrefv.co                     # movement direction
+    ####print("object: %s  topref: %s  bottomref: %s  refvec: %s" % (target.name, toprefv.co, bottomrefv.co, refvec))    # ***TEMP***
+    ####if refvec.magnitude < 0.001 :
+    ####    raise ValueError("Reference vertices are in the same place.")
+    ####refvecnorm = refvec.normalized()                        # unit vector
     #   All checks passed. OK to perform stretch.
+    print("Stretching %s by %s" % (target.name, stretchvec))
     #   Move verts
     for v in topvs :
-        v.co = v.co + refvecnorm * dist
+        v.co = v.co + stretchvec
     
 def getrefvertcoords(obj, refname) :
     """
@@ -133,8 +134,13 @@ class AskSizeDialogOperator(bpy.types.Operator):
             oldstretchvec = getrefvertcoords(reftarget, REFTOP).co - getrefvertcoords(reftarget, REFBOTTOM).co    # previous stretch vector
             newstretchvec = oldstretchvec * ((oldstretchvec.z + zchange) / oldstretchvec.z)                 # desired stretch vector
             dist = newstretchvec.magnitude - oldstretchvec.magnitude    # distance to add to stretch vector
+            toprefv = getrefvertcoords(reftarget, REFTOP)
+            bottomrefv = getrefvertcoords(reftarget, REFBOTTOM)
+            refvec = toprefv.co - bottomrefv.co                         # movement direction
+            if refvec.magnitude < 0.001 :
+                raise ValueError("Reference vertices are in the same place.")
             for target in targets: 
-                stretchmodel(reftarget, target, REFBOTTOM, REFTOP, VERTSTOP, dist)
+                stretchmodel(target, VERTSTOP, dist*refvec.normalized())
             #   Checking
             finalheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z    # final height
             if abs(finalheight - self.desired_height) > 0.01 :
