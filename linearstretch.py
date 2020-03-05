@@ -57,7 +57,7 @@ def getvertsingroup(obj, groupobj) :
 #
 #   stretchmodel -- stretch selected model appropriately
 #
-def stretchmodel(target, bottomrefname, toprefname, topname, dist) :
+def stretchmodel(reftarget, target, bottomrefname, toprefname, topname, dist) :
     """
     Stretch selected model along vector from bottom ref to top ref.
     
@@ -71,12 +71,12 @@ def stretchmodel(target, bottomrefname, toprefname, topname, dist) :
                 (target.name, target.scale[0], target.scale[1], target.scale[2]))
                 
     #   Find relevant vertex groups
-    toprefv = getrefvertcoords(target, toprefname)
-    bottomrefv = getrefvertcoords(target, bottomrefname)
+    toprefv = getrefvertcoords(reftarget, toprefname)
+    bottomrefv = getrefvertcoords(reftarget, bottomrefname)
     topgroup = target.vertex_groups[topname]
     topvs = getvertsingroup(target, topgroup)               # verts to move
     refvec = toprefv.co - bottomrefv.co                     # movement direction
-    print("topref: %s  bottomref: %s  refvec: %s" % (toprefv.co, bottomrefv.co, refvec))    # ***TEMP***
+    print("object: %s  topref: %s  bottomref: %s  refvec: %s" % (target.name, toprefv.co, bottomrefv.co, refvec))    # ***TEMP***
     if refvec.magnitude < 0.001 :
         raise ValueError("Reference vertices are in the same place.")
     refvecnorm = refvec.normalized()                        # unit vector
@@ -121,17 +121,22 @@ class AskSizeDialogOperator(bpy.types.Operator):
             return({'ERROR_INVALID_INPUT'}, "Desired height %1.3f out of range." % (self.desired_height))      
         if not context.selected_objects :
             return({'ERROR_INVALID_INPUT'}, "Nothing selected.")
-        target = context.selected_objects[-1]       # target object (last selection)
+        ####target = context.selected_objects[-1]       # target object (last selection)
+        targets = context.selected_objects          # all selected; last must contain the ref points
+        reftarget = context.active_object           # contains the ref points
+        ####reftarget = targets[-1]                     # contains the ref points
         try :                                       # do the work
             #   Calculate how much to stretch to get desired height between platform ref points
-            oldheight = getrefvertcoords(target, PLATTOP).co.z - getrefvertcoords(target, PLATBOTTOM).co.z  # previous height
+            print("Ref target is %s." % reftarget.name)
+            oldheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z  # previous height
             zchange = self.desired_height - oldheight        # need to change Z by this much
-            oldstretchvec = getrefvertcoords(target, REFTOP).co - getrefvertcoords(target, REFBOTTOM).co    # previous stretch vector
+            oldstretchvec = getrefvertcoords(reftarget, REFTOP).co - getrefvertcoords(reftarget, REFBOTTOM).co    # previous stretch vector
             newstretchvec = oldstretchvec * ((oldstretchvec.z + zchange) / oldstretchvec.z)                 # desired stretch vector
             dist = newstretchvec.magnitude - oldstretchvec.magnitude    # distance to add to stretch vector
-            stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, dist)
+            for target in targets: 
+                stretchmodel(reftarget, target, REFBOTTOM, REFTOP, VERTSTOP, dist)
             #   Checking
-            finalheight = getrefvertcoords(target, PLATTOP).co.z - getrefvertcoords(target, PLATBOTTOM).co.z    # final height
+            finalheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z    # final height
             if abs(finalheight - self.desired_height) > 0.01 :
                 raise ValueError("Model error: height %1.3f after stretching does not match goal of %1.3f" % (finalheight, self.desired_height))
             
