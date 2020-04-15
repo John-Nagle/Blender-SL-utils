@@ -148,7 +148,11 @@ def resizetomatchboundboxes(hilodobj,lolodobj) :
     plane = Vector([0,1,-1])                            # direction to look for points to stretch ***TEMP***
     verts = findvertstostretch(lolodobj, plane, planeloc)
     print("Verts: " + str([v.co for v in verts]))
-    pass  
+    #   All checks passed. OK to perform stretch.
+    print("Stretching %s by %s" % (lolodobj.name, stretch))
+    #   Move verts
+    for v in verts :
+        v.co = v.co + stretch 
     
 def findvertstostretch(obj, plane, planeloc) :
     '''
@@ -158,16 +162,7 @@ def findvertstostretch(obj, plane, planeloc) :
     '''
     plane.normalize()                                   # unit vector
     print("Plane: " + str(plane) + " Center: " + str(planeloc))                       # ***TEMP***
-    return [vert for vert in obj.data.vertices if (vert.co-planeloc).dot(plane) >= 0] # vertices in front of plane
-    verts = []
-    for vert in obj.data.vertices :                     # for all vertices
-        if (vert.co-planeloc).dot(plane) < 0 :
-            print("Vert to keep: %s" % (str(vert.co)),)             # ***TEMP***
-            continue                                    # ignore this point
-        print("Vert to move: %s" % (str(vert.co)),)             # ***TEMP***
-        verts.append(vert)
-    return verts       
-    
+    return [vert for vert in obj.data.vertices if (vert.co-planeloc).dot(plane) >= 0] # vertices in front of plane    
    
 def findlowlodmatch(obj) :
     print("Selected object: %s" % (obj.name))
