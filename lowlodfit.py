@@ -117,16 +117,13 @@ def adjustboundboxes(target) :
     
 def bbrange(bblist) :
     '''
-    Take in list of bounding box points, return Vector3(dx,dy,dz)
+    Take in list of bounding box points, return Vector(dx,dy,dz) indicating range
     '''
+    return Vector(
+        [max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]) for i in range(3)])
     delta = []
     for i in range(3) :
-        minval = bblist[0][i]
-        maxval = bblist[0][i]
-        for pnt in bblist :
-            minval = min(pnt[i],minval)
-            maxval = max(pnt[i],maxval)
-        delta.append(maxval-minval)
+        delta.append(max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]))
     return Vector(delta)
         
     
