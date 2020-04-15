@@ -120,12 +120,7 @@ def bbrange(bblist) :
     Take in list of bounding box points, return Vector(dx,dy,dz) indicating range
     '''
     return Vector(
-        [max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]) for i in range(3)])
-    delta = []
-    for i in range(3) :
-        delta.append(max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]))
-    return Vector(delta)
-        
+        [max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]) for i in range(3)])        
     
 def resizetomatchboundboxes(hilodobj,lolodobj) :
     '''
@@ -134,8 +129,12 @@ def resizetomatchboundboxes(hilodobj,lolodobj) :
     boundshi = hilodobj.bound_box                       # get bounding box
     for bnd in boundshi :
         print("Corner: <%f %f %f>" % (bnd[0],bnd[1],bnd[2]))                    # ***TEMP***
-    print("Range: " + str(bbrange(boundshi)))                                   # ***TEMP***
-    boundslo = lolodobj.bound_box
+    hirange = bbrange(hilodobj.bound_box)
+    lorange = bbrange(lolodobj.bound_box)
+    stretch = hirange-lorange                           # how much we have to stretch
+    print("Hi Range: " + str(hirange))                                # ***TEMP***
+    print("Lo Range: " + str(lorange))                                    # ***TEMP***
+    print("Stretch: " + str(stretch))
     pass         
     
    
