@@ -23,9 +23,13 @@ Select both parts of the high and low LOD. Main part of high LOD must be selecte
 ### UVs
 The UVs for the railing need to be re-made after stretching so that the railing animation speed will be uniform over the whole railing.
 
-UV->Reset
-UV->Follow active quads
-Then rescale until diamonds on railing are square
+1. Select longest part of one railing
+2. Select by material to get rest of railings
+3. Set X-ray mode.
+4. Deselect other railing by box (B) deselect (shift)
+5. UV->Follow active quads
+6. Repeat for other railing
+
 
 This is not working for both railings. One gets properly rescaled, the other is totally wrong.
 

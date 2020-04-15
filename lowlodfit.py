@@ -103,6 +103,40 @@ def getrefvertcoords(obj, refname) :
     if len(refverts) != 1 : 
         raise ValueError("Reference vertex group \"%s\" had %d vertices, not one." % (refname,len(refverts)))
     return refverts[0]                              # return the only vert
+    
+def adjustboundboxes(target) :
+    '''
+    Adjust second object to match bounding box of first
+    '''
+    matches = findlowlodmatch(target)
+    if len(matches) != 1 :
+        raise ValueError("No unique matching lower LOD mesh for: " + target.name)
+    lowlodobj = matches[0]                              # will adjust this object
+    resizetomatchboundboxes(target, lowlodobj)
+    return 
+        
+    
+def resizetomatchboundboxes(hilodobj,lolodobj) :
+    '''
+    Adjust second object to match bounding box of first
+    '''
+    pass         
+    
+   
+def findlowlodmatch(obj) :
+    print("Selected object: %s" % (obj.name))
+    matches = []
+    for lowlodobj in bpy.data.objects :
+        print("Scene object: %s (%s)" % (lowlodobj.name, lowlodobj.type))    # ***TEMP***
+        if lowlodobj == obj :                       # skip self object
+            continue
+        if not lowlodobj.name.startswith(obj.name) : # skip no name match
+            continue   
+        if not lowlodobj.type == 'Mesh':            # only mesh objects
+            continue
+        matches.append(lowlodobj)    
+    return matches
+
    
         
 #
@@ -125,12 +159,12 @@ class ResizeLODDialogOperator(bpy.types.Operator):
     def run(self, context):
         if not context.selected_objects :
             return({'ERROR_INVALID_INPUT'}, "Nothing selected.")
-        ####target = context.selected_objects[-1]       # target object (last selection)
-        targets = context.selected_objects          # all selected; last must contain the ref points
         reftarget = context.active_object           # contains the ref points
-        target = targets[-1]                        # the one target object
-        return ({'ERROR_INVALID_INPUT'}, "Target: " + target.name)  # ***TEMP***
+        if not reftarget :
+            return({'ERROR_INVALID_INPUT'}, "No active object.")
         try :                                       # do the work
+            adjustboundboxes(reftarget)             # find other object and calc bound boxes
+            return None
             #   Calculate how much to stretch to get desired height between platform ref points
             print("Ref target is %s." % reftarget.name)
             oldheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z  # previous height
