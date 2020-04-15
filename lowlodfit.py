@@ -147,6 +147,7 @@ def resizetomatchboundboxes(hilodobj,lolodobj) :
     planeloc = bbcenter(lolodobj.bound_box)             # center of object being modified
     plane = Vector([0,1,-1])                            # direction to look for points to stretch ***TEMP***
     verts = findvertstostretch(lolodobj, plane, planeloc)
+    print("Verts: " + str([v.co for v in verts]))
     pass  
     
 def findvertstostretch(obj, plane, planeloc) :
@@ -157,6 +158,7 @@ def findvertstostretch(obj, plane, planeloc) :
     '''
     plane.normalize()                                   # unit vector
     print("Plane: " + str(plane) + " Center: " + str(planeloc))                       # ***TEMP***
+    return [vert for vert in obj.data.vertices if (vert.co-planeloc).dot(plane) >= 0] # vertices in front of plane
     verts = []
     for vert in obj.data.vertices :                     # for all vertices
         if (vert.co-planeloc).dot(plane) < 0 :
