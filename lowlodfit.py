@@ -135,7 +135,27 @@ def resizetomatchboundboxes(hilodobj,lolodobj) :
     print("Hi Range: " + str(hirange))                                # ***TEMP***
     print("Lo Range: " + str(lorange))                                    # ***TEMP***
     print("Stretch: " + str(stretch))
-    pass         
+    #  Find which vertices need stretching
+    planeloc = Vector([0,0,0])                          # relative to object center
+    plane = Vector([0,-1,-1])                           # direction to look for points to stretch ***TEMP***
+    verts = findvertstostretch(lolodobj, plane, planeloc)
+    pass  
+    
+def findvertstostretch(obj, plane, planeloc) :
+    '''
+    Return all vertices of object obj on the + sign of
+    the plane defined by direction vector plane and 
+    point planeloc
+    '''
+    plane.normalize()                                   # unit vector
+    verts = []
+    ####print(dir(obj.data))
+    for vert in obj.data.vertices :                     # for all vertices
+        if (vert.co-planeloc).dot(plane) < 0 :
+            continue                                    # ignore this point
+        print("Vert: %s" % (str(vert.co)),)             # ***TEMP***
+        verts.append(vert)
+    return verts       
     
    
 def findlowlodmatch(obj) :
