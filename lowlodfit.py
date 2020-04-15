@@ -120,7 +120,14 @@ def bbrange(bblist) :
     Take in list of bounding box points, return Vector(dx,dy,dz) indicating range
     '''
     return Vector(
-        [max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]) for i in range(3)])        
+        [max([pnt[i] for pnt in bblist])-min([pnt[i] for pnt in bblist]) for i in range(3)]) 
+        
+def bbcenter(bblist) :
+    '''
+    Take in list of bounding box points, return Vector(dx,dy,dz) indicating center
+    '''
+    return Vector(
+        [max([pnt[i] for pnt in bblist])+min([pnt[i] for pnt in bblist]) for i in range(3)])*0.5     
     
 def resizetomatchboundboxes(hilodobj,lolodobj) :
     '''
@@ -137,7 +144,8 @@ def resizetomatchboundboxes(hilodobj,lolodobj) :
     print("Stretch: " + str(stretch))
     #  Find which vertices need stretching
     planeloc = Vector([0,0,0])                          # relative to object center
-    plane = Vector([0,-1,-1])                           # direction to look for points to stretch ***TEMP***
+    planeloc = bbcenter(lolodobj.bound_box)             # center of object being modified
+    plane = Vector([0,1,-1])                            # direction to look for points to stretch ***TEMP***
     verts = findvertstostretch(lolodobj, plane, planeloc)
     pass  
     
@@ -148,12 +156,13 @@ def findvertstostretch(obj, plane, planeloc) :
     point planeloc
     '''
     plane.normalize()                                   # unit vector
+    print("Plane: " + str(plane) + " Center: " + str(planeloc))                       # ***TEMP***
     verts = []
-    ####print(dir(obj.data))
     for vert in obj.data.vertices :                     # for all vertices
         if (vert.co-planeloc).dot(plane) < 0 :
+            print("Vert to keep: %s" % (str(vert.co)),)             # ***TEMP***
             continue                                    # ignore this point
-        print("Vert: %s" % (str(vert.co)),)             # ***TEMP***
+        print("Vert to move: %s" % (str(vert.co)),)             # ***TEMP***
         verts.append(vert)
     return verts       
     
