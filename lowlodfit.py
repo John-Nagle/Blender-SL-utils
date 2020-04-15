@@ -114,12 +114,31 @@ def adjustboundboxes(target) :
     lowlodobj = matches[0]                              # will adjust this object
     resizetomatchboundboxes(target, lowlodobj)
     return 
+    
+def bbrange(bblist) :
+    '''
+    Take in list of bounding box points, return Vector3(dx,dy,dz)
+    '''
+    delta = []
+    for i in range(3) :
+        minval = bblist[0][i]
+        maxval = bblist[0][i]
+        for pnt in bblist :
+            minval = min(pnt[i],minval)
+            maxval = max(pnt[i],maxval)
+        delta.append(maxval-minval)
+    return Vector(delta)
         
     
 def resizetomatchboundboxes(hilodobj,lolodobj) :
     '''
     Adjust second object to match bounding box of first
     '''
+    boundshi = hilodobj.bound_box                       # get bounding box
+    for bnd in boundshi :
+        print("Corner: <%f %f %f>" % (bnd[0],bnd[1],bnd[2]))                    # ***TEMP***
+    print("Range: " + str(bbrange(boundshi)))                                   # ***TEMP***
+    boundslo = lolodobj.bound_box
     pass         
     
    
@@ -132,7 +151,7 @@ def findlowlodmatch(obj) :
             continue
         if not lowlodobj.name.startswith(obj.name) : # skip no name match
             continue   
-        if not lowlodobj.type == 'Mesh':            # only mesh objects
+        if not lowlodobj.type == 'MESH':            # only mesh objects
             continue
         matches.append(lowlodobj)    
     return matches
