@@ -241,13 +241,3 @@ bpy.utils.register_class(ResizeLODDialogOperator)
 def lowlodfit() :
     bpy.ops.object.resize_lod_dialog_operator('INVOKE_DEFAULT')
 
-#   Test only
-def test() :
-    context = C
-    if not context.selected_objects :
-        return({'ERROR_INVALID_INPUT'}, "Nothing selected.")
-    target = context.selected_objects[-1]       # target impostor (last selection)
-
-    msg = stretchmodel(target, REFBOTTOM, REFTOP, VERTSTOP, 5.0)
-    if (msg) :
-        print("Error: %s" % (str(msg),))

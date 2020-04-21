@@ -68,7 +68,29 @@ def findpolyfromvertices(obj,verts) :
             print("Face info: %s" % (dir(polygon))) # ***TEMP***
             return i                                # found
     return None                                     # no find
-    
+
+#
+#   positivesideofplane  
+#
+def positivesideofplane(obj, poly, plane, planeloc) :
+    '''
+    True if poly is entirely on the positive side of the plane
+    '''
+    for vertix in poly.vertices :
+        if (obj.data.vertices[vertix].co-planeloc).dot(plane) < 0 :      # if on negative side of plane
+            return(False)
+    return(True)                                    # entirely on good side of the plane
+            
+#
+#   findrailingfaces -- find all faces with indicated material
+#
+def findrailingfaces(obj, materialix, plane, planeloc) :
+    '''
+    Find all faces with indicated material and on + side of plane
+    '''
+    return [face for face in obj.data.polygons 
+        if face.material_index == materialix
+        and positivesideofplane(obj, face, plane, planeloc)] 
 #
 #   equalizerailinguvs -- equalize UVs along length of railings
 #
@@ -87,9 +109,16 @@ def equalizerailinguvs(obj) :
         faceix = findpolyfromvertices(obj,keyverts)         # look for verts
         if faceix is None :                                 # no find
             raise ValueError("Unable to find face that matches vertex group \"%s\"." % (refname,))
-        ####keyface = obj.data.faces[facename]              # key face of interest
-        ####faces = findrailingfaces(obj, keyface.data.material, plane, planeloc)
-    pass
+        materialix = obj.data.polygons[faceix].material_index   # get material index of key polygon
+        material = obj.data.materials[materialix]           # the material
+        print("Key face material is %s" % (material.name,)) # ****TEMP***
+        faces = findrailingfaces(obj, materialix, plane, planeloc)
+        #   ***MORE***
+        print("Found %d faces to equalize." % (len(faces),))
+    
+#
+#   followquadsequalize
+#
 
 
 #
