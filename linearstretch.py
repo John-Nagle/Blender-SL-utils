@@ -38,6 +38,60 @@ REFTOP = "Top ref"
 PLATTOP = "Top platform"
 PLATBOTTOM = "Bottom platform"
 
+#   Railing info. Name of vertex group, normal to plane for selecting points, point on plane for selecting points
+RAILINGS = [("Railing L",Vector([-1,0,0]),Vector([0,0,0])), 
+           ("Railing R",Vector([1,0,0]),Vector([0,0,0]))]            # long face of each railing, for UV equalization
+           
+#
+#   findrailingfaces -- get points for railng of interest
+#
+def findrailingfaces(obj, material, plane, planeloc) :
+    '''
+    Select faces which are in front of plane and of desired material
+    '''
+    return [face for face in obj.data.faces if (face.co-planeloc).dot(plane) >= 0 and face.data.material == material] # vertices in front of plane  
+
+#
+#   findpolyfromvertices
+#
+def findpolyfromvertices(obj,verts) :
+    '''
+    Takes list of vertex indicies, returns single matching face index or None
+    '''
+    vertsset = set([v.index for v in verts])        # indices of polygon, for comparison
+    print("Vertex set for face: %s" % (vertsset,))  # ***TEMP***
+    for item in obj.data.polygons.items() :         # for all polygons
+        (i, polygon) = item
+        polyset = set(polygon.vertices)
+        ####print("Vertex set for poly: %s" % (polyset,))  # ***TEMP***
+        if vertsset == set(polygon.vertices) :      # if all match
+            print("Face info: %s" % (dir(polygon))) # ***TEMP***
+            return i                                # found
+    return None                                     # no find
+    
+#
+#   equalizerailinguvs -- equalize UVs along length of railings
+#
+def equalizerailinguvs(obj) :
+    '''
+    Equalize UVs along length of railings.
+    
+    After we stretch, we need to equalize UVs so the railing animation looks right
+    '''
+    for (refname, plane, planeloc) in RAILINGS :            # for each railing vertex group
+        if not refname in obj.vertex_groups :               # can't find this vertex group
+            raise ValueError("Cannot find railing vertex group \"%s\"." % (refname,))
+        vertgroup = obj.vertex_groups[refname]              # got vertex group
+        keyverts = getvertsingroup(obj, vertgroup)          # get verts of face
+        print("Railing %s: %d verts." % (refname, len(keyverts)))   # found relevant groups
+        faceix = findpolyfromvertices(obj,keyverts)         # look for verts
+        if faceix is None :                                 # no find
+            raise ValueError("Unable to find face that matches vertex group \"%s\"." % (refname,))
+        ####keyface = obj.data.faces[facename]              # key face of interest
+        ####faces = findrailingfaces(obj, keyface.data.material, plane, planeloc)
+    pass
+
+
 #
 #   getvertsingroup --  get vertices in given group
 #
