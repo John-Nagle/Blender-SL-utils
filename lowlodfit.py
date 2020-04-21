@@ -207,24 +207,6 @@ class ResizeLODDialogOperator(bpy.types.Operator):
         try :                                       # do the work
             adjustboundboxes(reftarget)             # find other object and calc bound boxes
             return None
-            #   Calculate how much to stretch to get desired height between platform ref points
-            print("Ref target is %s." % reftarget.name)
-            oldheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z  # previous height
-            zchange = self.desired_height - oldheight        # need to change Z by this much
-            oldstretchvec = getrefvertcoords(reftarget, REFTOP).co - getrefvertcoords(reftarget, REFBOTTOM).co    # previous stretch vector
-            newstretchvec = oldstretchvec * ((oldstretchvec.z + zchange) / oldstretchvec.z)                 # desired stretch vector
-            dist = newstretchvec.magnitude - oldstretchvec.magnitude    # distance to add to stretch vector
-            toprefv = getrefvertcoords(reftarget, REFTOP)
-            bottomrefv = getrefvertcoords(reftarget, REFBOTTOM)
-            refvec = toprefv.co - bottomrefv.co                         # movement direction
-            if refvec.magnitude < 0.001 :
-                raise ValueError("Reference vertices are in the same place.")
-            for target in targets: 
-                stretchmodel(target, VERTSTOP, dist*refvec.normalized())
-            #   Checking
-            finalheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z    # final height
-            if abs(finalheight - self.desired_height) > 0.01 :
-                raise ValueError("Model error: height %1.3f after stretching does not match goal of %1.3f" % (finalheight, self.desired_height))
             
         except ValueError as message :
             return ({'ERROR_INVALID_INPUT'}, str(message))

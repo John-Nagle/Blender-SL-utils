@@ -65,7 +65,7 @@ def findpolyfromvertices(obj,verts) :
         polyset = set(polygon.vertices)
         ####print("Vertex set for poly: %s" % (polyset,))  # ***TEMP***
         if vertsset == set(polygon.vertices) :      # if all match
-            print("Face info: %s" % (dir(polygon))) # ***TEMP***
+            ####print("Face info: %s" % (dir(polygon))) # ***TEMP***
             return i                                # found
     return None                                     # no find
 
@@ -115,6 +115,8 @@ def equalizerailinguvs(obj) :
         faces = findrailingfaces(obj, materialix, plane, planeloc)
         #   ***MORE***
         print("Found %d faces to equalize." % (len(faces),))
+        ####for face in faces :
+            ####print("Face %d material ix: %d" % (face.index, face.material_index))
     
 #
 #   followquadsequalize
