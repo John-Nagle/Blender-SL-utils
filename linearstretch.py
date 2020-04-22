@@ -43,6 +43,30 @@ RAILINGS = [("Railing L",Vector([-1,0,0]),Vector([0,0,0])),
            ("Railing R",Vector([1,0,0]),Vector([0,0,0]))]            # long face of each railing, for UV equalization
            
 #
+#   SavedSelection 
+#
+class SavedSelection() :
+    '''
+    Save object selection for later restoration
+    '''
+    def __init__(self) :
+        '''
+        Save current object selection state
+        '''
+        self.selected_objects = bpy.context.selected_objects
+        self.active_object = bpy.context.active_object
+        
+    def restore(self) :
+        '''
+        Restore saved state
+        '''    
+        bpy.ops.object.select_all(action='DESELECT')    # Deselect all objects
+        if self.active_object :
+            bpy.context.view_layer.objects.active = self.active_object   # Make the cube the active object
+        for obj in self.selected_objects :              # restore selection set
+            obj.select_set = True                
+           
+#
 #   findrailingfaces -- get points for railng of interest
 #
 def findrailingfaces(obj, material, plane, planeloc) :
@@ -56,7 +80,7 @@ def findrailingfaces(obj, material, plane, planeloc) :
 #
 def findpolyfromvertices(obj,verts) :
     '''
-    Takes list of vertex indicies, returns single matching face index or None
+    Takes list of vertex indicies, returns single matching face or None
     '''
     vertsset = set([v.index for v in verts])        # indices of polygon, for comparison
     print("Vertex set for face: %s" % (vertsset,))  # ***TEMP***
@@ -66,7 +90,7 @@ def findpolyfromvertices(obj,verts) :
         ####print("Vertex set for poly: %s" % (polyset,))  # ***TEMP***
         if vertsset == set(polygon.vertices) :      # if all match
             ####print("Face info: %s" % (dir(polygon))) # ***TEMP***
-            return i                                # found
+            return polygon                          # found
     return None                                     # no find
 
 #
@@ -106,10 +130,10 @@ def equalizerailinguvs(obj) :
         vertgroup = obj.vertex_groups[refname]              # got vertex group
         keyverts = getvertsingroup(obj, vertgroup)          # get verts of face
         print("Railing %s: %d verts." % (refname, len(keyverts)))   # found relevant groups
-        faceix = findpolyfromvertices(obj,keyverts)         # look for verts
-        if faceix is None :                                 # no find
+        keyface = findpolyfromvertices(obj,keyverts)         # look for verts
+        if keyface is None :                                 # no find
             raise ValueError("Unable to find face that matches vertex group \"%s\"." % (refname,))
-        materialix = obj.data.polygons[faceix].material_index   # get material index of key polygon
+        materialix = keyface.material_index                 # get material index of key polygon
         material = obj.data.materials[materialix]           # the material
         print("Key face material is %s" % (material.name,)) # ****TEMP***
         faces = findrailingfaces(obj, materialix, plane, planeloc)
@@ -117,11 +141,32 @@ def equalizerailinguvs(obj) :
         print("Found %d faces to equalize." % (len(faces),))
         ####for face in faces :
             ####print("Face %d material ix: %d" % (face.index, face.material_index))
+        followquadsequalize(obj, keyface, faces)            # do the follow quads operation
     
 #
 #   followquadsequalize
 #
-
+def followquadsequalize(obj, keyface, faces) :
+    '''
+    Do a "follow active quads".
+    
+    Select listed faces.
+    Set keyface as active.
+    Do follow active quads
+    
+    We have to do this as a visible operator, because
+    "follow active quads" is not directly callable on arbitrary geometry
+    '''
+    prevmode = bpy.context.mode
+    try :
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # strangely, we have to select faces in object mode
+        for face in obj.data.polygons.values() :                # deselect all faces
+            face.select = False                                 # deselect 
+        keyface.select = True                                   # select key face first to make it active
+        for face in faces :                                     # select all faces
+            face.select = True
+    finally:
+        bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # strangely, we have to select faces in object mode
 
 #
 #   getvertsingroup --  get vertices in given group
