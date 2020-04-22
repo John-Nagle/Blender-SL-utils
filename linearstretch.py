@@ -167,15 +167,19 @@ def followquadsequalize(obj, keyface, faces) :
     try :
         #   Get all faces to be equalized selected. Key face to follow is the active face
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # strangely, we have to select faces in object mode
-        ####for faceix in obj.data.polygons.keys() :                # deselect all faces ***NOT WORKING***
-        ####    obj.data.polygons[faceix].select = False
+        #   Deselect all mesh elements
+        for vertex in obj.data.vertices :
+            vertex.select = False
+        for edge in obj.data.edges :
+            edge.select = False
         for face in obj.data.polygons.values() :
             face.select = False                                 # deselect 
             print("Deselecting face #%d" % (face.index,))       # ***TEMP***
-        ####return
-        keyface.select = True                                   # select key face first to make it active
+        #   Select faces of interest and key face
         for face in faces :                                     # select all faces
             face.select = True
+        keyface.select = True                                   # select key face first to make it active
+        #   ***MAY NEED TO SET EDGES AND VERTICES AS SELECTED***
         print("Key face #%d" % (keyface.index,))                # ***TEMP***
     finally:
         bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # return to previous mode
