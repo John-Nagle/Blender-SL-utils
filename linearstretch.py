@@ -39,8 +39,8 @@ PLATTOP = "Top platform"
 PLATBOTTOM = "Bottom platform"
 
 #   Railing info. Name of vertex group, normal to plane for selecting points, point on plane for selecting points
-RAILINGS = [("Railing L",Vector([-1,0,0]),Vector([0,0,0])), 
-           ("Railing R",Vector([1,0,0]),Vector([0,0,0]))]            # long face of each railing, for UV equalization
+RAILINGS = [("Railing L",Vector([1,0,0]),Vector([0,0,0])), 
+           ("Railing R",Vector([-1,0,0]),Vector([0,0,0]))]            # long face of each railing, for UV equalization
            
 #
 #   SavedSelection 
@@ -101,8 +101,13 @@ def positivesideofplane(obj, poly, plane, planeloc) :
     True if poly is entirely on the positive side of the plane
     '''
     for vertix in poly.vertices :
-        if (obj.data.vertices[vertix].co-planeloc).dot(plane) < 0 :      # if on negative side of plane
+        keep = (obj.data.vertices[vertix].co-planeloc).dot(plane) > 0
+        ####print("Vertex %d: (%s)  %s" % (vertix, keep, obj.data.vertices[vertix].co)) # ***TEMP***
+        if (not keep) :
             return(False)
+        print("Vertex %d: (%s)  %s" % (vertix, keep, obj.data.vertices[vertix].co)) # ***TEMP***
+ 
+    ####print("Vertex %d: %s" % (vertix, obj.data.vertices[vertix].co)) # ***TEMP***
     return(True)                                    # entirely on good side of the plane
             
 #
@@ -142,6 +147,7 @@ def equalizerailinguvs(obj) :
         ####for face in faces :
             ####print("Face %d material ix: %d" % (face.index, face.material_index))
         followquadsequalize(obj, keyface, faces)            # do the follow quads operation
+        return # ***TEMP*** only do one railing
     
 #
 #   followquadsequalize
@@ -159,6 +165,7 @@ def followquadsequalize(obj, keyface, faces) :
     '''
     prevmode = bpy.context.mode
     try :
+        #   Get all faces to be equalized selected. Key face to follow is the active face
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # strangely, we have to select faces in object mode
         for face in obj.data.polygons.values() :                # deselect all faces
             face.select = False                                 # deselect 
@@ -166,7 +173,7 @@ def followquadsequalize(obj, keyface, faces) :
         for face in faces :                                     # select all faces
             face.select = True
     finally:
-        bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # strangely, we have to select faces in object mode
+        bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # return to previous mode
 
 #
 #   getvertsingroup --  get vertices in given group
