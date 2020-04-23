@@ -25,6 +25,7 @@
 #       Make sure scale is 1, or fix to be scale-independent.
 #
 import bpy
+import bmesh
 import math
 #
 #   Names of vertex groups in model.
@@ -160,29 +161,49 @@ def followquadsequalize(obj, keyface, faces) :
     Set keyface as active.
     Do follow active quads
     
-    We have to do this as a visible operator, because
+    We have to do this as a user-visible operator, because
     "follow active quads" is not directly callable on arbitrary geometry
     '''
-    prevmode = bpy.context.mode
+    prevmode = bpy.context.mode                                 # for later restoration
     try :
         #   Get all faces to be equalized selected. Key face to follow is the active face
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # strangely, we have to select faces in object mode
-        #   Deselect all mesh elements
+        #   Deselect all mesh elements of the object
         for vertex in obj.data.vertices :
             vertex.select = False
         for edge in obj.data.edges :
             edge.select = False
         for face in obj.data.polygons.values() :
             face.select = False                                 # deselect 
-            print("Deselecting face #%d" % (face.index,))       # ***TEMP***
         #   Select faces of interest and key face
-        for face in faces :                                     # select all faces
-            face.select = True
-        keyface.select = True                                   # select key face first to make it active
-        #   ***MAY NEED TO SET EDGES AND VERTICES AS SELECTED***
+        for face in faces :                                     # for all faces
+            face.select = True                                  # select face
+            for loopix in face.loop_indices :                   # for all edge loops
+                loop = obj.data.loops[loopix]                   # loop of interest
+                obj.data.vertices[loop.vertex_index].select = True   # select vertex
+                obj.data.edges[loop.edge_index].select = True        # select edges
+       
+        keyface.select = True         
+        #   Make the key face the active face. 
+        #   Per https://blender.stackexchange.com/questions/81395/python-set-active-face-batch-unwrap-follow-active-quads
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)      # must be in edit mode for bmesh work
+        bm = bmesh.from_edit_mesh(obj.data)                     # get a working bmesh
+        bm.faces.ensure_lookup_table()                          # make faces indexable
+        bm.faces.active = bm.faces[keyface.index]               # set key face as active face
+        ####bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
+        ####bm.to_mesh(obj.data)                                    # push bmesh back to main mesh
+        bmesh.update_edit_mesh(obj.data, True)
+        bm.free()                                               # done with bmesh
+
+        #   Equalize the UVs
+        ####bpy.ops.uv.follow_active_quads(mode='LENGTH')           # equalize UVs
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
+        ####bm.free()                                               # done with bmesh
+                
+        ####keyface.select = True                                   # select key face last to make it active
         print("Key face #%d" % (keyface.index,))                # ***TEMP***
     finally:
-        bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # return to previous mode
+        pass #### bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # return to previous mode
 
 #
 #   getvertsingroup --  get vertices in given group
