@@ -303,6 +303,8 @@ class AskSizeDialogOperator(bpy.types.Operator):
             finalheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z    # final height
             if abs(finalheight - self.desired_height) > 0.01 :
                 raise ValueError("Model error: height %1.3f after stretching does not match goal of %1.3f" % (finalheight, self.desired_height))
+            #   Finally equalize the UVs of the railing
+            equalizerailinguvs(reftarget)
             
         except ValueError as message :
             return ({'ERROR_INVALID_INPUT'}, str(message))
