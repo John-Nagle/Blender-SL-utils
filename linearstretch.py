@@ -106,7 +106,7 @@ def positivesideofplane(obj, poly, plane, planeloc) :
         ####print("Vertex %d: (%s)  %s" % (vertix, keep, obj.data.vertices[vertix].co)) # ***TEMP***
         if (not keep) :
             return(False)
-        print("Vertex %d: (%s)  %s" % (vertix, keep, obj.data.vertices[vertix].co)) # ***TEMP***
+        ####print("Vertex %d: (%s)  %s" % (vertix, keep, obj.data.vertices[vertix].co)) # ***TEMP***
  
     ####print("Vertex %d: %s" % (vertix, obj.data.vertices[vertix].co)) # ***TEMP***
     return(True)                                    # entirely on good side of the plane
@@ -183,24 +183,19 @@ def followquadsequalize(obj, keyface, faces) :
                 obj.data.vertices[loop.vertex_index].select = True   # select vertex
                 obj.data.edges[loop.edge_index].select = True        # select edges
        
-        keyface.select = True         
+        ####keyface.select = True         
         #   Make the key face the active face. 
         #   Per https://blender.stackexchange.com/questions/81395/python-set-active-face-batch-unwrap-follow-active-quads
         bpy.ops.object.mode_set(mode='EDIT', toggle=False)      # must be in edit mode for bmesh work
         bm = bmesh.from_edit_mesh(obj.data)                     # get a working bmesh
         bm.faces.ensure_lookup_table()                          # make faces indexable
         bm.faces.active = bm.faces[keyface.index]               # set key face as active face
-        ####bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
-        ####bm.to_mesh(obj.data)                                    # push bmesh back to main mesh
-        bmesh.update_edit_mesh(obj.data, True)
-        bm.free()                                               # done with bmesh
+        bmesh.update_edit_mesh(obj.data, True)                  # push bmesh back to main mesh (How does it know to use bm?)
 
         #   Equalize the UVs
-        ####bpy.ops.uv.follow_active_quads(mode='LENGTH')           # equalize UVs
+        bpy.ops.uv.follow_active_quads(mode='LENGTH')           # equalize UVs
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
-        ####bm.free()                                               # done with bmesh
-                
-        ####keyface.select = True                                   # select key face last to make it active
+        bm.free()                                               # done with bmesh
         print("Key face #%d" % (keyface.index,))                # ***TEMP***
     finally:
         pass #### bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # return to previous mode
