@@ -143,12 +143,8 @@ def equalizerailinguvs(obj) :
         material = obj.data.materials[materialix]           # the material
         print("Key face material is %s" % (material.name,)) # ****TEMP***
         faces = findrailingfaces(obj, materialix, plane, planeloc)
-        #   ***MORE***
         print("Found %d faces to equalize." % (len(faces),))
-        ####for face in faces :
-            ####print("Face %d material ix: %d" % (face.index, face.material_index))
         followquadsequalize(obj, keyface, faces)            # do the follow quads operation
-        return # ***TEMP*** only do one railing
     
 #
 #   followquadsequalize
