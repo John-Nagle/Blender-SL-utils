@@ -43,29 +43,6 @@ PLATBOTTOM = "Bottom platform"
 RAILINGS = [("Railing L",Vector([1,0,0]),Vector([0,0,0])), 
            ("Railing R",Vector([-1,0,0]),Vector([0,0,0]))]            # long face of each railing, for UV equalization
            
-#
-#   SavedSelection 
-#
-class SavedSelection() :
-    '''
-    Save object selection for later restoration
-    '''
-    def __init__(self) :
-        '''
-        Save current object selection state
-        '''
-        self.selected_objects = bpy.context.selected_objects
-        self.active_object = bpy.context.active_object
-        
-    def restore(self) :
-        '''
-        Restore saved state
-        '''    
-        bpy.ops.object.select_all(action='DESELECT')    # Deselect all objects
-        if self.active_object :
-            bpy.context.view_layer.objects.active = self.active_object   # Make the cube the active object
-        for obj in self.selected_objects :              # restore selection set
-            obj.select_set = True                
            
 #
 #   findrailingfaces -- get points for railng of interest
@@ -145,7 +122,54 @@ def equalizerailinguvs(obj) :
         faces = findrailingfaces(obj, materialix, plane, planeloc)
         print("Found %d faces to equalize." % (len(faces),))
         followquadsequalize(obj, keyface, faces)            # do the follow quads operation
+
+#
+#   keyfacelengths -- get length of key face
+#
+#   The change in this during resizing controls scaling
+#
+def keyfacelengths(obj, keyface) :
+    '''
+    Get lengths of key face. This is a rectangular quad, or should be
     
+    Must be in OBJECT mode.
+    '''
+    #   Lengths in 3D space
+    longside = 0.0                                              # no key length yet
+    shortside = float('inf')                                    # shortest length, for min
+    uvcoords = []                                               # UV coords in 2D space
+    ####vertcoords = []                                             # vertex coords in 3D space
+    for loopix in keyface.loop_indices :                        # for all edge loops
+        loop = obj.data.loops[loopix]                           # loop of interest
+        edge = obj.data.edges[loop.edge_index]                  # key vertex
+        uvcoords.append(obj.data.uv_layers.active.data[loopix].uv)   # UV coords of vertex for this edge
+        ####vertcoords.append(obj.data.vertices[edge.vertices[1]].co)    # 3D coords of vertex for this edge
+        length = (obj.data.vertices[edge.vertices[0]].co - obj.data.vertices[edge.vertices[1]].co).length # distance between vertices
+        longside = max(length, longside)                        # keep longest length
+        shortside = min(length, shortside)                      # keep shortest length
+    ####print("Vertex coords: %s" % (vertcoords,))
+    #   Lengths in 3D space, wrapping around
+    ####longside = 0.0
+    ####shortside = float('inf')
+    ####for i in range(len(vertcoords)) :
+        ####length = (vertcoords[i] - vertcoords[(i+1) % len(vertcoords)]).length
+        ####longside = max(length, longside)                        # keep longest length
+        ####shortside = min(length, shortside)                      # keep shortest length
+
+    #   Lengths in UV space, wrapping around
+    longuvside = 0.0
+    shortuvside = float('inf')
+    for i in range(len(uvcoords)) :
+        length = (uvcoords[i] - uvcoords[(i+1) % len(uvcoords)]).length
+        longuvside = max(length, longuvside)                    # keep longest length
+        shortuvside = min(length, shortuvside)                  # keep shortest length
+
+    for vert_idx, loop_idx in zip(keyface.vertices, keyface.loop_indices):
+        uv_coords = obj.data.uv_layers.active.data[loop_idx].uv
+        print("face idx: %i, vert idx: %i, uvs: %f, %f" % (keyface.index, vert_idx, uv_coords.x, uv_coords.y))
+
+    return (shortside, longside, shortuvside, longuvside)                                # shortest and longest lengths
+            
 #
 #   followquadsequalize
 #
@@ -179,7 +203,6 @@ def followquadsequalize(obj, keyface, faces) :
                 obj.data.vertices[loop.vertex_index].select = True   # select vertex
                 obj.data.edges[loop.edge_index].select = True        # select edges
        
-        ####keyface.select = True         
         #   Make the key face the active face. 
         #   Per https://blender.stackexchange.com/questions/81395/python-set-active-face-batch-unwrap-follow-active-quads
         bpy.ops.object.mode_set(mode='EDIT', toggle=False)      # must be in edit mode for bmesh work
@@ -190,7 +213,12 @@ def followquadsequalize(obj, keyface, faces) :
 
         #   Equalize the UVs
         bpy.ops.uv.follow_active_quads(mode='LENGTH')           # equalize UVs
+        #   Done
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
+        #   Scale UVs to fit
+        keylengths = keyfacelengths(obj,keyface)                # get lengths of key face
+        print("Key face lengths: %s" % (keylengths,))           # ***TEMP***
+
         bm.free()                                               # done with bmesh
         print("Key face #%d" % (keyface.index,))                # ***TEMP***
     finally:
