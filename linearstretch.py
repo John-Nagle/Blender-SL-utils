@@ -133,13 +133,8 @@ def keyfacelengths(obj, keyface) :
     Get lengths of key face. This is a rectangular quad, or should be
     
     Must be in OBJECT mode.
-    
-    ***NOT WORKING - getting only 3 unique verts for a face which is supposed to be a quad.***
-    ***RATIOS WRONG FOR DIMENSIONS OF QUAD***
     '''
     #   Lengths in 3D space
-    ####longside = 0.0                                              # no key length yet
-    ####shortside = float('inf')                                    # shortest length, for min
     uvcoords = []                                               # UV coords in 2D space
     vertcoords = []                                             # vertex coords in 3D space
     for loopix in keyface.loop_indices :                        # for all edge loops
@@ -148,10 +143,6 @@ def keyfacelengths(obj, keyface) :
         uvcoords.append(obj.data.uv_layers.active.data[loopix].uv)   # UV coords of vertex for this edge
         vertcoords.append(obj.data.vertices[loop.vertex_index].co)    # 3D coords of vertex for this edge
         print("Vert: %s  Edge: %s  %s" % (obj.data.vertices[loop.vertex_index].co,obj.data.vertices[edge.vertices[0]].co , obj.data.vertices[edge.vertices[1]].co))
-        continue ### dead code below
-        length = (obj.data.vertices[edge.vertices[0]].co - obj.data.vertices[edge.vertices[1]].co).length # distance between vertices
-        longside = max(length, longside)                        # keep longest length
-        shortside = min(length, shortside)                      # keep shortest length
     print("Vertex coords: %s" % (vertcoords,))
     #   Lengths in 3D space, wrapping around
     longside = 0.0
@@ -196,6 +187,14 @@ def followquadsequalize(obj, keyface, faces) :
     '''
     prevmode = bpy.context.mode                                 # for later restoration
     try :
+        #   Find image being used for texture, to get its aspect ratio
+        materialix = keyface.material_index                     # get material index of key polygon
+        material = obj.data.materials[materialix]               # the material
+        print("Key face material is %s" % (material.name,))     # ****TEMP***
+        if material and material.use_nodes:
+            for node in material.node_tree.nodes:
+                if node.type == 'TEX_IMAGE':                        
+                    print(' uses', node.image.name, 'x',node.image.size[0], 'y',node.image.size[1])
         #   Get all faces to be equalized selected. Key face to follow is the active face
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # strangely, we have to select faces in object mode
         #   Deselect all mesh elements of the object
