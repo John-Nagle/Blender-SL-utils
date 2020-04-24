@@ -133,28 +133,33 @@ def keyfacelengths(obj, keyface) :
     Get lengths of key face. This is a rectangular quad, or should be
     
     Must be in OBJECT mode.
+    
+    ***NOT WORKING - getting only 3 unique verts for a face which is supposed to be a quad.***
+    ***RATIOS WRONG FOR DIMENSIONS OF QUAD***
     '''
     #   Lengths in 3D space
-    longside = 0.0                                              # no key length yet
-    shortside = float('inf')                                    # shortest length, for min
+    ####longside = 0.0                                              # no key length yet
+    ####shortside = float('inf')                                    # shortest length, for min
     uvcoords = []                                               # UV coords in 2D space
-    ####vertcoords = []                                             # vertex coords in 3D space
+    vertcoords = []                                             # vertex coords in 3D space
     for loopix in keyface.loop_indices :                        # for all edge loops
         loop = obj.data.loops[loopix]                           # loop of interest
         edge = obj.data.edges[loop.edge_index]                  # key vertex
         uvcoords.append(obj.data.uv_layers.active.data[loopix].uv)   # UV coords of vertex for this edge
-        ####vertcoords.append(obj.data.vertices[edge.vertices[1]].co)    # 3D coords of vertex for this edge
+        vertcoords.append(obj.data.vertices[loop.vertex_index].co)    # 3D coords of vertex for this edge
+        print("Vert: %s  Edge: %s  %s" % (obj.data.vertices[loop.vertex_index].co,obj.data.vertices[edge.vertices[0]].co , obj.data.vertices[edge.vertices[1]].co))
+        continue ### dead code below
         length = (obj.data.vertices[edge.vertices[0]].co - obj.data.vertices[edge.vertices[1]].co).length # distance between vertices
         longside = max(length, longside)                        # keep longest length
         shortside = min(length, shortside)                      # keep shortest length
-    ####print("Vertex coords: %s" % (vertcoords,))
+    print("Vertex coords: %s" % (vertcoords,))
     #   Lengths in 3D space, wrapping around
-    ####longside = 0.0
-    ####shortside = float('inf')
-    ####for i in range(len(vertcoords)) :
-        ####length = (vertcoords[i] - vertcoords[(i+1) % len(vertcoords)]).length
-        ####longside = max(length, longside)                        # keep longest length
-        ####shortside = min(length, shortside)                      # keep shortest length
+    longside = 0.0
+    shortside = float('inf')
+    for i in range(len(vertcoords)) :
+        length = (vertcoords[i] - vertcoords[(i+1) % len(vertcoords)]).length
+        longside = max(length, longside)                        # keep longest length
+        shortside = min(length, shortside)                      # keep shortest length
 
     #   Lengths in UV space, wrapping around
     longuvside = 0.0
@@ -167,6 +172,11 @@ def keyfacelengths(obj, keyface) :
     for vert_idx, loop_idx in zip(keyface.vertices, keyface.loop_indices):
         uv_coords = obj.data.uv_layers.active.data[loop_idx].uv
         print("face idx: %i, vert idx: %i, uvs: %f, %f" % (keyface.index, vert_idx, uv_coords.x, uv_coords.y))
+        
+    vertratio = longside / shortside
+    uvratio = longuvside / shortuvside
+    uvrescale = vertratio / uvratio
+    print("Face ratios: verts %1.4f UVs %1.4f  UV rescale needed: %1.4f" % (vertratio, uvratio, uvrescale,))
 
     return (shortside, longside, shortuvside, longuvside)                                # shortest and longest lengths
             
