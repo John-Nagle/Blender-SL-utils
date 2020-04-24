@@ -128,7 +128,7 @@ def equalizerailinguvs(obj) :
 #
 #   The change in this during resizing controls scaling
 #
-def keyfacelengths(obj, keyface) :
+def keyfacelengths(obj, keyface, teximageaspect) :
     '''
     Get lengths of key face. This is a rectangular quad, or should be
     
@@ -160,16 +160,15 @@ def keyfacelengths(obj, keyface) :
         longuvside = max(length, longuvside)                    # keep longest length
         shortuvside = min(length, shortuvside)                  # keep shortest length
 
-    for vert_idx, loop_idx in zip(keyface.vertices, keyface.loop_indices):
-        uv_coords = obj.data.uv_layers.active.data[loop_idx].uv
-        print("face idx: %i, vert idx: %i, uvs: %f, %f" % (keyface.index, vert_idx, uv_coords.x, uv_coords.y))
+    ####for vert_idx, loop_idx in zip(keyface.vertices, keyface.loop_indices):
+    ####    uv_coords = obj.data.uv_layers.active.data[loop_idx].uv
+    ####    print("face idx: %i, vert idx: %i, uvs: %f, %f" % (keyface.index, vert_idx, uv_coords.x, uv_coords.y))
         
     vertratio = longside / shortside
     uvratio = longuvside / shortuvside
-    uvrescale = vertratio / uvratio
+    uvrescale = (vertratio / uvratio) / teximageaspect          # calculate X rescale factor to make model match image
     print("Face ratios: verts %1.4f UVs %1.4f  UV rescale needed: %1.4f" % (vertratio, uvratio, uvrescale,))
-
-    return (shortside, longside, shortuvside, longuvside)                                # shortest and longest lengths
+    return uvrescale                                            # apply this rescale factor to X axis of UVs
             
 #
 #   followquadsequalize
@@ -188,13 +187,17 @@ def followquadsequalize(obj, keyface, faces) :
     prevmode = bpy.context.mode                                 # for later restoration
     try :
         #   Find image being used for texture, to get its aspect ratio
+        teximageaspect = 1.0                                    # texture image aspect ratio
         materialix = keyface.material_index                     # get material index of key polygon
-        material = obj.data.materials[materialix]               # the material
+        material = obj.data.materials[materialix]               # the material. Must have material to get here
         print("Key face material is %s" % (material.name,))     # ****TEMP***
-        if material and material.use_nodes:
-            for node in material.node_tree.nodes:
-                if node.type == 'TEX_IMAGE':                        
-                    print(' uses', node.image.name, 'x',node.image.size[0], 'y',node.image.size[1])
+        #   Get aspect ratio from first texture image for this material
+        if material and material.use_nodes :                    # if we have a material
+            for node in material.node_tree.nodes:               # look through node tree for image
+                if node.type == 'TEX_IMAGE' :
+                    if node.image.size[0] > 0 or node.image.size[1] > 0 :
+                        print(' uses', node.image.name, 'x',node.image.size[0], 'y',node.image.size[1])
+                        teximageaspect = node.image.size[0] / node.image.size[1]    # image aspect ratio X/Y
         #   Get all faces to be equalized selected. Key face to follow is the active face
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # strangely, we have to select faces in object mode
         #   Deselect all mesh elements of the object
@@ -225,7 +228,7 @@ def followquadsequalize(obj, keyface, faces) :
         #   Done
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
         #   Scale UVs to fit
-        keylengths = keyfacelengths(obj,keyface)                # get lengths of key face
+        keylengths = keyfacelengths(obj,keyface, teximageaspect)# get lengths of key face
         print("Key face lengths: %s" % (keylengths,))           # ***TEMP***
 
         bm.free()                                               # done with bmesh
