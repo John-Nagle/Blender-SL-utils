@@ -227,14 +227,31 @@ def followquadsequalize(obj, keyface, faces) :
         bpy.ops.uv.follow_active_quads(mode='LENGTH')           # equalize UVs
         #   Done
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
-        #   Scale UVs to fit
-        keylengths = keyfacelengths(obj,keyface, teximageaspect)# get lengths of key face
-        print("Key face lengths: %s" % (keylengths,))           # ***TEMP***
-
         bm.free()                                               # done with bmesh
+        #   Scale UVs to fit
+        resizex = keyfacelengths(obj,keyface, teximageaspect)# get lengths of key face
+        print("Key face lengths: %s" % (resizex,))              # ***TEMP***
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)      # must be in edit mode for bmesh work
+        bm = bmesh.from_edit_mesh(obj.data)                     # get a working bmesh
+        scaleuvs(obj, bm, faces, Vector([resizex, 1.0]))        # rescale UV of indicated faces
         print("Key face #%d" % (keyface.index,))                # ***TEMP***
     finally:
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)    # back to object mode
         pass #### bpy.ops.object.mode_set(mode=prevmode, toggle=False)    # return to previous mode
+        
+#
+#
+#
+def scaleuvs(obj, bm, faces, scale) :
+    '''
+    Rescale all indicated UVs by multipliers given.
+    
+    Like the "S" command
+    '''
+    uv_layer = bm.loops.layers.uv.verify()                      # not sure about this, copied
+    for f in bm.faces:
+        for l in f.loops:
+            l[uv_layer].uv = Vector([l[uv_layer].uv[i]*scale[i] for i in range(len(scale))] )   # elementwise mult
 
 #
 #   getvertsingroup --  get vertices in given group
