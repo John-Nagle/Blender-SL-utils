@@ -2,6 +2,7 @@
 #   linearstretch.py
 #
 #   Linear stretch along a vector defined by two reference points.
+#   Specific to animats escalators.
 #
 #   Animats
 #   December, 2018
@@ -19,6 +20,22 @@
 # 
 #   filename = "linearstretch.py"
 #   exec(compile(open(filename).read(), filename, 'exec'))
+#   Select an object of the lower LOD, and "Escalatorbody" of the high LOD.
+#   linearstretch()
+#
+#   The object hierarchy must be:
+#   
+#       Collection for high LOD
+#           Escalatorbody high LOD
+#           Escalatorpart
+#       Collection for low LOD
+#           Escalatorbody low LOD
+#           Escalatorpart low LOD
+#
+#   The last item selected must be Escalatorbody, high LOD, because it has the
+#   reference points which controlt the stretch direction. Everything else is
+#   stretched to match.          
+#           
 #
 #   TODO:
 #       Make sure in object mode.
@@ -32,12 +49,12 @@ import math
 #   Model must use these.
 #   All "Ref" single vertex ref points must have vertex weight 0.
 #
-VERTSBOTTOM = "Bottom"
-VERTSTOP = "Top"
-REFBOTTOM = "Bottom ref"
-REFTOP = "Top ref"
-PLATTOP = "Top platform"
-PLATBOTTOM = "Bottom platform"
+VERTSBOTTOM = "Bottom"                                      # Vertices of all escalator bottom elements
+VERTSTOP = "Top"                                            # Vertices of all escalator top elements
+REFBOTTOM = "Bottom ref"                                    # Single ref point, top of stretch area
+REFTOP = "Top ref"                                          # Single ref point, bottom of stretch area
+PLATTOP = "Top platform"                                    # Single ref point, top platform
+PLATBOTTOM = "Bottom platform"                              # Single ref point, bottom platform
 
 #   Railing info. Name of vertex group, normal to plane for selecting points, point on plane for selecting points
 RAILINGS = [("Railing L",Vector([1,0,0]),Vector([0,0,0])), 
