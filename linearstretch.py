@@ -355,13 +355,13 @@ class AskSizeDialogOperator(bpy.types.Operator):
             if refvec.magnitude < 0.001 :
                 raise ValueError("Reference vertices are in the same place.")
             for target in targets: 
-                stretchmodel(target, VERTSTOP, dist*refvec.normalized())
+                stretchmodel(target, VERTSTOP, dist*refvec.normalized())    # stretcg
+                equalizerailinguvs(target)                                  # equalize UVs
             #   Checking
             finalheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z    # final height
             if abs(finalheight - self.desired_height) > 0.01 :
                 raise ValueError("Model error: height %1.3f after stretching does not match goal of %1.3f" % (finalheight, self.desired_height))
-            #   Finally equalize the UVs of the railing
-            equalizerailinguvs(reftarget)
+            
             
         except ValueError as message :
             return ({'ERROR_INVALID_INPUT'}, str(message))
