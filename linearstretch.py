@@ -107,9 +107,15 @@ def equalizerailinguvs(obj) :
     
     After we stretch, we need to equalize UVs so the railing animation looks right
     '''
+    #   Check that this object has a stretchable railing
     for (refname, plane, planeloc) in RAILINGS :            # for each railing vertex group
         if not refname in obj.vertex_groups :               # can't find this vertex group
-            raise ValueError("Cannot find railing vertex group \"%s\"." % (refname,))
+            print("No vert group \"%s\" in \"%s\"." % (refname,obj.name))
+            return
+    #   Object OK for UV adjustment. Do it.
+    for (refname, plane, planeloc) in RAILINGS :            # for each railing vertex group
+        if not refname in obj.vertex_groups :               # can't find this vertex group
+            raise ValueError("No vert group \"%s\" in \"%s\"." % (refname,obj.name))
         vertgroup = obj.vertex_groups[refname]              # got vertex group
         keyverts = getvertsingroup(obj, vertgroup)          # get verts of face
         print("Railing %s: %d verts." % (refname, len(keyverts)))   # found relevant groups
@@ -306,7 +312,7 @@ def getrefvertcoords(obj, refname) :
     Get coordinates of a single vertex group
     """
     if not refname in obj.vertex_groups :
-        raise ValueError("Cannot find vertex group \"%s\"." % (refname,))
+        raise ValueError("Cannot find vertex group \"%s\" in \"%s\"." % (refname,obj.name))
     refgroup = obj.vertex_groups[refname]
     refverts = getvertsingroup(obj, refgroup)
     if len(refverts) != 1 : 
@@ -354,9 +360,10 @@ class AskSizeDialogOperator(bpy.types.Operator):
             refvec = toprefv.co - bottomrefv.co                         # movement direction
             if refvec.magnitude < 0.001 :
                 raise ValueError("Reference vertices are in the same place.")
-            for target in targets: 
-                stretchmodel(target, VERTSTOP, dist*refvec.normalized())    # stretcg
-                equalizerailinguvs(target)                                  # equalize UVs
+            for target in targets:
+                if target.type == 'MESH' : 
+                    stretchmodel(target, VERTSTOP, dist*refvec.normalized())    # stretch
+                    equalizerailinguvs(target)                                  # equalize UVs
             #   Checking
             finalheight = getrefvertcoords(reftarget, PLATTOP).co.z - getrefvertcoords(reftarget, PLATBOTTOM).co.z    # final height
             if abs(finalheight - self.desired_height) > 0.01 :
