@@ -255,7 +255,8 @@ def scaleuvs(obj, bm, faces, scale) :
     Like the "S" command
     '''
     uv_layer = bm.loops.layers.uv.verify()                      # not sure about this, copied
-    for f in bm.faces:
+    bm.faces.ensure_lookup_table()                              # make faces indexable
+    for f in [bm.faces[face.index] for face in faces] :         # use requested faces. Face index is preserved in copy
         for l in f.loops:
             l[uv_layer].uv = Vector([l[uv_layer].uv[i]*scale[i] for i in range(len(scale))] )   # elementwise mult
 
