@@ -347,7 +347,17 @@ class AskSizeDialogOperator(bpy.types.Operator):
         ####target = context.selected_objects[-1]       # target object (last selection)
         targets = context.selected_objects          # all selected; last must contain the ref points
         reftarget = context.active_object           # contains the ref points
-        ####reftarget = targets[-1]                     # contains the ref points
+        #   Find all top level objects in the same collections as the items given
+        targetset = set(targets)
+        for target in targets :                     # for all selected
+            for coll in target.users_collection :   # for all enclosing collections
+                for collobj in coll.objects :       # objects directly in this collection
+                    if collobj.type != 'MESH' :     # meshes only
+                        continue
+                    if not collobj in targetset :   # if new member
+                        print("Additional target: %s from collection %s" % (collobj.name,coll.name))
+                        targetset.add(collobj)      # add to target set
+        
         try :                                       # do the work
             #   Calculate how much to stretch to get desired height between platform ref points
             print("Ref target is %s." % reftarget.name)
@@ -361,7 +371,7 @@ class AskSizeDialogOperator(bpy.types.Operator):
             refvec = toprefv.co - bottomrefv.co                         # movement direction
             if refvec.magnitude < 0.001 :
                 raise ValueError("Reference vertices are in the same place.")
-            for target in targets:
+            for target in targetset:
                 if target.type == 'MESH' : 
                     stretchmodel(target, VERTSTOP, dist*refvec.normalized())    # stretch
                     equalizerailinguvs(target)                                  # equalize UVs
