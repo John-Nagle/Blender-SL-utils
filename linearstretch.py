@@ -34,7 +34,11 @@
 #
 #   The last item selected must be Escalatorbody, high LOD, because it has the
 #   reference points which controlt the stretch direction. Everything else is
-#   stretched to match.          
+#   stretched to match. 
+#
+#   The long axis of the escalator must be the Y axis.
+#   The escalator must be centered on the X axis.
+#   Scale must be 1, and rotation must be 0         
 #           
 #
 #   TODO:
@@ -345,7 +349,7 @@ class AskSizeDialogOperator(bpy.types.Operator):
     bl_idname = "object.ask_size_dialog_operator"
     bl_label = "Resizing by stretching"
 
-    desired_height = bpy.props.FloatProperty(name="Desired height")
+    desired_height: bpy.props.FloatProperty(name="Desired height")
     
     def execute(self, context) :
         result = self.run(context)
